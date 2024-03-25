@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +12,10 @@ import (
 )
 
 var allowedExtensions []string = []string{".jpeg", ".jpg", ".png", ".svg"}
+
+var (
+	ErrImageNotFound = errors.New("image not found")
+)
 
 type DiskImageStorage struct {
 	Path       string
@@ -46,7 +51,7 @@ func prepareListImages(path string) ([]*models.ImgInfo, error) {
 	const op = "storage.prepartListImages"
 	var listOfImages []*models.ImgInfo
 
-	err := filepath.WalkDir(path, func(path string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir(path, func(pathImg string, d os.DirEntry, err error) error {
 		ch := checkExtension(allowedExtensions, filepath.Ext(d.Name()))
 		cd := d.IsDir()
 
@@ -59,6 +64,7 @@ func prepareListImages(path string) ([]*models.ImgInfo, error) {
 
 			imgInfo := &models.ImgInfo{
 				FileName: d.Name(),
+				Path:     path,
 				Size:     uint32(info.Size()),
 				CreateDt: info.ModTime(),
 				UpdateDt: info.ModTime(),
@@ -100,6 +106,7 @@ func (d *DiskImageStorage) Upload(filename string, data bytes.Buffer) (models.Im
 
 	imgInfo := models.ImgInfo{
 		FileName: filename,
+		Path:     d.Path,
 		Size:     uint32(st.Size()),
 		CreateDt: st.ModTime(),
 		UpdateDt: st.ModTime(),
@@ -114,6 +121,7 @@ func (d *DiskImageStorage) Upload(filename string, data bytes.Buffer) (models.Im
 }
 
 func (d *DiskImageStorage) CheckExists(filename string) bool {
+
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 
@@ -124,4 +132,21 @@ func (d *DiskImageStorage) CheckExists(filename string) bool {
 	}
 
 	return false
+}
+
+func (d *DiskImageStorage) Download(
+	filename string,
+) (*models.ImgInfo, error) {
+	const op string = "storage.Download"
+
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+
+	for _, img := range d.ListImages {
+		if filename == img.FileName {
+			return img, nil
+		}
+	}
+
+	return &models.ImgInfo{}, fmt.Errorf("%s: %w", op, ErrImageNotFound)
 }

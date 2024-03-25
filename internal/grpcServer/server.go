@@ -2,7 +2,9 @@ package grpcServer
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"os"
 
 	"github.com/andrei1998Front/grpc_img_srvr/internal/domain/models"
 	gis "github.com/andrei1998Front/grpc_img_srvr/pkg/proto"
@@ -22,6 +24,9 @@ type ImgService interface {
 		filename string,
 		chunk bytes.Buffer,
 	) (models.ImgInfo, error)
+	Download(
+		filename string,
+	) (*models.ImgInfo, error)
 }
 
 func Register(gRPCServer *grpc.Server, imgService ImgService) {
@@ -52,7 +57,7 @@ func (s *serverApi) Upload(
 
 		_, err = imageData.Write(req.GetChunk())
 		if err != nil {
-			return status.Error(codes.Internal, "filename is required")
+			return status.Error(codes.Internal, "internal error")
 		}
 	}
 
@@ -71,6 +76,58 @@ func (s *serverApi) Upload(
 
 	if err = stream.SendAndClose(&imgInfo); err != nil {
 		return status.Error(codes.Internal, "internal error")
+	}
+
+	return nil
+}
+
+func (s *serverApi) Download(
+	req *gis.ImgDownloadRequest,
+	stream gis.ImgService_DownloadServer,
+) error {
+	filename := req.GetFileName()
+
+	if filename == "" {
+		return status.Error(codes.InvalidArgument, "filename is required")
+	}
+
+	imgInfo, err := s.imgService.Download(filename)
+
+	if err != nil {
+		return status.Error(codes.Internal, "internal error")
+	}
+
+	imgFile, err := os.Open(imgInfo.Path + "/" + imgInfo.FileName)
+	fmt.Println(imgInfo.Path + "/" + imgInfo.FileName)
+
+	if err != nil {
+		return status.Error(codes.Internal, "open file error")
+	}
+
+	defer imgFile.Close()
+
+	var totalBytesStreamed uint32
+
+	for totalBytesStreamed < imgInfo.Size {
+		chunk := make([]byte, 1024)
+		bytesRead, err := imgFile.Read(chunk)
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return status.Error(codes.Internal, "downlod file error")
+		}
+
+		if err := stream.Send(&gis.ImgDownloadResponce{
+			FileName: imgInfo.FileName,
+			Chunk:    chunk,
+		}); err != nil {
+			return status.Error(codes.Internal, "downlod file error")
+		}
+
+		totalBytesStreamed += uint32(bytesRead)
 	}
 
 	return nil

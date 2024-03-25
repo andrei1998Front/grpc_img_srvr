@@ -6,6 +6,7 @@ import (
 
 type ImgInfo struct {
 	FileName string
+	Path     string
 	Size     uint32
 	CreateDt time.Time
 	UpdateDt time.Time

@@ -19,7 +19,7 @@ func New(
 ) *App {
 	storage := storage.New(storagePath)
 
-	imgService := imgService.New(log, storage)
+	imgService := imgService.New(log, storage, storage)
 
 	grpcApp := grpcapp.New(log, *imgService, grpcPort)
 
@@ -27,4 +27,3 @@ func New(
 		GRPCServer: grpcApp,
 	}
 }
-

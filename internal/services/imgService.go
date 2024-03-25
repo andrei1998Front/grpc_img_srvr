@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	ErrImageExists   = errors.New("image already exists")
-	ErrImageNotFound = errors.New("image not found")
+	ErrImageExists = errors.New("image already exists")
 )
 
 type ImgService struct {
-	log         *slog.Logger
-	imgUploader ImgUploader
+	log           *slog.Logger
+	imgUploader   ImgUploader
+	imgDownloader ImgDownloader
 }
 
 type ImgUploader interface {
@@ -27,13 +27,21 @@ type ImgUploader interface {
 	CheckExists(filename string) bool
 }
 
+type ImgDownloader interface {
+	Download(
+		filename string,
+	) (*models.ImgInfo, error)
+}
+
 func New(
 	log *slog.Logger,
 	imgUploader ImgUploader,
+	imgDownloader ImgDownloader,
 ) *ImgService {
 	return &ImgService{
-		log:         log,
-		imgUploader: imgUploader,
+		log:           log,
+		imgUploader:   imgUploader,
+		imgDownloader: imgDownloader,
 	}
 }
 
@@ -63,6 +71,30 @@ func (s ImgService) Upload(
 	}
 
 	log.Info("image " + filename + " upload was successful")
+
+	return imgInfo, nil
+}
+
+func (s ImgService) Download(
+	filename string,
+) (*models.ImgInfo, error) {
+	const op = "ImageService.Upload"
+
+	log := s.log.With(
+		slog.String("op", op),
+		slog.String("filename", filename),
+	)
+
+	log.Info("start receiving file " + filename + " from storage")
+
+	imgInfo, err := s.imgDownloader.Download(filename)
+
+	if err != nil {
+		log.Error("image "+filename+" download failed", err)
+		return &models.ImgInfo{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("the file " + filename + " was received from the storage successfully")
 
 	return imgInfo, nil
 }
