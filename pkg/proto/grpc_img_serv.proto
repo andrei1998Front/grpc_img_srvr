@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package grpc_img_server;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./grpc_img_server";
+
+service ImgService {
+    rpc Upload(stream ImgUploadRequest) returns(ImgInfo); 
+}
+
+message ImgUploadRequest {
+    string filename = 1;
+    bytes chunk = 2;
+}
+
+message ImgInfo {
+    string file_name = 2;
+    uint32 size = 3;
+    google.protobuf.Timestamp create_dt = 4;
+    google.protobuf.Timestamp update_dt = 5;
+}
