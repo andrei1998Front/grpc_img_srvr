@@ -2,6 +2,7 @@ package grpcServer
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -16,7 +17,21 @@ import (
 
 type serverApi struct {
 	gis.UnimplementedImgServiceServer
-	imgService ImgService
+	imgService       ImgService
+	chDownloadUpload chan struct{}
+	chLOF            chan struct{}
+}
+
+func New(
+	imgService ImgService,
+	chDownloadUpload chan struct{},
+	chLOF chan struct{},
+) *serverApi {
+	return &serverApi{
+		imgService:       imgService,
+		chDownloadUpload: chDownloadUpload,
+		chLOF:            chLOF,
+	}
 }
 
 type ImgService interface {
@@ -27,15 +42,25 @@ type ImgService interface {
 	Download(
 		filename string,
 	) (*models.ImgInfo, error)
+	ListOfImages(ctx context.Context) ([]*models.ImgInfo, error)
 }
 
-func Register(gRPCServer *grpc.Server, imgService ImgService) {
-	gis.RegisterImgServiceServer(gRPCServer, &serverApi{imgService: imgService})
+func Register(
+	gRPCServer *grpc.Server,
+	imgService ImgService,
+	chDownloadUpload chan struct{},
+	chLOF chan struct{},
+) {
+	sApi := New(imgService, chDownloadUpload, chLOF)
+	gis.RegisterImgServiceServer(gRPCServer, sApi)
 }
 
 func (s *serverApi) Upload(
 	stream gis.ImgService_UploadServer,
 ) error {
+	s.chDownloadUpload <- struct{}{}
+	defer func() { <-s.chDownloadUpload }()
+
 	var filename string
 	imageData := bytes.Buffer{}
 
@@ -85,6 +110,9 @@ func (s *serverApi) Download(
 	req *gis.ImgDownloadRequest,
 	stream gis.ImgService_DownloadServer,
 ) error {
+	s.chDownloadUpload <- struct{}{}
+	defer func() { <-s.chDownloadUpload }()
+
 	filename := req.GetFileName()
 
 	if filename == "" {
@@ -131,4 +159,27 @@ func (s *serverApi) Download(
 	}
 
 	return nil
+}
+
+func (s *serverApi) ListOfImages(ctx context.Context, req *gis.ListOfImagesRequest) (*gis.ListOfImagesResponce, error) {
+	s.chLOF <- struct{}{}
+	defer func() { <-s.chLOF }()
+
+	lof, err := s.imgService.ListOfImages(ctx)
+
+	if err != nil {
+		return &gis.ListOfImagesResponce{}, status.Error(codes.Internal, "internal error")
+	}
+
+	var lofResponce gis.ListOfImagesResponce
+	for _, imgInfo := range lof {
+		lofResponce.ListOfImages = append(lofResponce.ListOfImages, &gis.ImgInfo{
+			FileName: imgInfo.FileName,
+			Size:     imgInfo.Size,
+			CreateDt: timestamppb.New(imgInfo.CreateDt),
+			UpdateDt: timestamppb.New(imgInfo.UpdateDt),
+		})
+	}
+
+	return &lofResponce, nil
 }

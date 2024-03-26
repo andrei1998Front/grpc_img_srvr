@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -149,4 +150,8 @@ func (d *DiskImageStorage) Download(
 	}
 
 	return &models.ImgInfo{}, fmt.Errorf("%s: %w", op, ErrImageNotFound)
+}
+
+func (d *DiskImageStorage) ListOfImages(ctx context.Context) ([]*models.ImgInfo, error) {
+	return d.ListImages, nil
 }

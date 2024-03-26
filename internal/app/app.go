@@ -16,12 +16,14 @@ func New(
 	log *slog.Logger,
 	grpcPort int,
 	storagePath string,
+	maxDownloadUploadCalls int,
+	maxLOFCalls int,
 ) *App {
 	storage := storage.New(storagePath)
 
-	imgService := imgService.New(log, storage, storage)
+	imgService := imgService.New(log, storage, storage, storage)
 
-	grpcApp := grpcapp.New(log, *imgService, grpcPort)
+	grpcApp := grpcapp.New(log, *imgService, grpcPort, maxDownloadUploadCalls, maxLOFCalls)
 
 	return &App{
 		GRPCServer: grpcApp,

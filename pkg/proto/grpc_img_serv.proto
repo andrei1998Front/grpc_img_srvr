@@ -9,6 +9,7 @@ option go_package = "./grpc_img_server";
 service ImgService {
     rpc Upload(stream ImgUploadRequest) returns(ImgInfo); 
     rpc Download(ImgDownloadRequest) returns(stream ImgDownloadResponce);
+    rpc ListOfImages(ListOfImagesRequest) returns(ListOfImagesResponce);
 }
 
 message ImgUploadRequest {
@@ -30,4 +31,10 @@ message ImgDownloadRequest{
 message ImgDownloadResponce {
     string file_name = 1;
     bytes chunk = 2;
+}
+
+message ListOfImagesRequest{}
+
+message ListOfImagesResponce{
+    repeated ImgInfo ListOfImages = 1;
 }

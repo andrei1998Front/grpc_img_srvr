@@ -3,3 +3,5 @@ grpc:
     port: 44044
     timeout: 5s
     storage_path: "./imgs"
+    max_download_upload_calls: 10
+    max_lof_calls: 100

@@ -25,6 +25,8 @@ func New(
 	log *slog.Logger,
 	imgService imgService.ImgService,
 	port int,
+	maxDownloadUploadCalls int,
+	maxLOFCalls int,
 ) *App {
 	loggingOpts := []logging.Option{
 		logging.WithLogOnEvents(
@@ -44,7 +46,9 @@ func New(
 		logging.StreamServerInterceptor(InterceptorLogger(log), loggingOpts...),
 	))
 
-	imagegrpc.Register(gRPCServer, imgService)
+	chDownloadUpload := make(chan struct{}, maxDownloadUploadCalls)
+	chLOF := make(chan struct{}, maxLOFCalls)
+	imagegrpc.Register(gRPCServer, imgService, chDownloadUpload, chLOF)
 
 	return &App{
 		log:        log,

@@ -21,7 +21,7 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	application := app.New(log, cfg.GRPC.Port, cfg.GRPC.StoragePath)
+	application := app.New(log, cfg.GRPC.Port, cfg.GRPC.StoragePath, cfg.GRPC.MaxDownloadUploadCalls, cfg.GRPC.MaxLOFCalls)
 
 	go func() {
 		application.GRPCServer.MustRun()

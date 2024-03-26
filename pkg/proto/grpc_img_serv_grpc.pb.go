@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type ImgServiceClient interface {
 	Upload(ctx context.Context, opts ...grpc.CallOption) (ImgService_UploadClient, error)
 	Download(ctx context.Context, in *ImgDownloadRequest, opts ...grpc.CallOption) (ImgService_DownloadClient, error)
+	ListOfImages(ctx context.Context, in *ListOfImagesRequest, opts ...grpc.CallOption) (*ListOfImagesResponce, error)
 }
 
 type imgServiceClient struct {
@@ -100,12 +101,22 @@ func (x *imgServiceDownloadClient) Recv() (*ImgDownloadResponce, error) {
 	return m, nil
 }
 
+func (c *imgServiceClient) ListOfImages(ctx context.Context, in *ListOfImagesRequest, opts ...grpc.CallOption) (*ListOfImagesResponce, error) {
+	out := new(ListOfImagesResponce)
+	err := c.cc.Invoke(ctx, "/grpc_img_server.ImgService/ListOfImages", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ImgServiceServer is the server API for ImgService service.
 // All implementations must embed UnimplementedImgServiceServer
 // for forward compatibility
 type ImgServiceServer interface {
 	Upload(ImgService_UploadServer) error
 	Download(*ImgDownloadRequest, ImgService_DownloadServer) error
+	ListOfImages(context.Context, *ListOfImagesRequest) (*ListOfImagesResponce, error)
 	mustEmbedUnimplementedImgServiceServer()
 }
 
@@ -118,6 +129,9 @@ func (UnimplementedImgServiceServer) Upload(ImgService_UploadServer) error {
 }
 func (UnimplementedImgServiceServer) Download(*ImgDownloadRequest, ImgService_DownloadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Download not implemented")
+}
+func (UnimplementedImgServiceServer) ListOfImages(context.Context, *ListOfImagesRequest) (*ListOfImagesResponce, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListOfImages not implemented")
 }
 func (UnimplementedImgServiceServer) mustEmbedUnimplementedImgServiceServer() {}
 
@@ -179,13 +193,36 @@ func (x *imgServiceDownloadServer) Send(m *ImgDownloadResponce) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _ImgService_ListOfImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOfImagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImgServiceServer).ListOfImages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc_img_server.ImgService/ListOfImages",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImgServiceServer).ListOfImages(ctx, req.(*ListOfImagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ImgService_ServiceDesc is the grpc.ServiceDesc for ImgService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ImgService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "grpc_img_server.ImgService",
 	HandlerType: (*ImgServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListOfImages",
+			Handler:    _ImgService_ListOfImages_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Upload",

@@ -14,9 +14,11 @@ type Config struct {
 }
 
 type GRPCConfig struct {
-	Port        int           `yaml:"port" env-required:"true"`
-	Timout      time.Duration `yaml:"timeout" env-required:"true"`
-	StoragePath string        `yaml:"storage_path" env-required:"true"`
+	Port                   int           `yaml:"port" env-required:"true"`
+	Timout                 time.Duration `yaml:"timeout" env-required:"true"`
+	StoragePath            string        `yaml:"storage_path" env-required:"true"`
+	MaxDownloadUploadCalls int           `yaml:"max_download_upload_calls " env-default:"100"`
+	MaxLOFCalls            int           `yaml:"max_lof_calls" env-default:"100"`
 }
 
 func MustLoad() *Config {

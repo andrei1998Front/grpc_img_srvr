@@ -2,6 +2,7 @@ package imgService
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -14,9 +15,10 @@ var (
 )
 
 type ImgService struct {
-	log           *slog.Logger
-	imgUploader   ImgUploader
-	imgDownloader ImgDownloader
+	log                *slog.Logger
+	imgUploader        ImgUploader
+	imgDownloader      ImgDownloader
+	listOfImagesGetter ListOfImagesGetter
 }
 
 type ImgUploader interface {
@@ -33,15 +35,21 @@ type ImgDownloader interface {
 	) (*models.ImgInfo, error)
 }
 
+type ListOfImagesGetter interface {
+	ListOfImages(ctx context.Context) ([]*models.ImgInfo, error)
+}
+
 func New(
 	log *slog.Logger,
 	imgUploader ImgUploader,
 	imgDownloader ImgDownloader,
+	listOfImagesGetter ListOfImagesGetter,
 ) *ImgService {
 	return &ImgService{
-		log:           log,
-		imgUploader:   imgUploader,
-		imgDownloader: imgDownloader,
+		log:                log,
+		imgUploader:        imgUploader,
+		imgDownloader:      imgDownloader,
+		listOfImagesGetter: listOfImagesGetter,
 	}
 }
 
@@ -97,4 +105,23 @@ func (s ImgService) Download(
 	log.Info("the file " + filename + " was received from the storage successfully")
 
 	return imgInfo, nil
+}
+
+func (s ImgService) ListOfImages(ctx context.Context) ([]*models.ImgInfo, error) {
+	const op = "ImageService.ListOfImages"
+
+	log := s.log.With(slog.String(op, "op"))
+
+	log.Info("start receiving list of images from storage")
+
+	lof, err := s.listOfImagesGetter.ListOfImages(ctx)
+
+	if err != nil {
+		log.Error("receive list of images failed", err)
+		return []*models.ImgInfo{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("the list of images was received from the storage successfully")
+
+	return lof, nil
 }
