@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/andrei1998Front/grpc_img_srvr/internal/domain/models"
 )
@@ -107,7 +108,7 @@ func (s ImgService) Download(
 	return imgInfo, nil
 }
 
-func (s ImgService) ListOfImages(ctx context.Context) ([]*models.ImgInfo, error) {
+func (s ImgService) ListOfImages(ctx context.Context) (string, error) {
 	const op = "ImageService.ListOfImages"
 
 	log := s.log.With(slog.String(op, "op"))
@@ -118,10 +119,37 @@ func (s ImgService) ListOfImages(ctx context.Context) ([]*models.ImgInfo, error)
 
 	if err != nil {
 		log.Error("receive list of images failed", err)
-		return []*models.ImgInfo{}, fmt.Errorf("%s: %w", op, err)
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	log.Info("the list of images was received from the storage successfully")
 
-	return lof, nil
+	return s.lofToStr(lof), nil
+}
+
+func (s ImgService) lofToStr(infoList []*models.ImgInfo) string {
+	const op = "ImageService.lofToStr"
+
+	log := s.log.With(slog.String("op", op))
+
+	var strSlice []string
+
+	log.Info("start converting image list")
+
+	for _, info := range infoList {
+		infoStr := s.imgInfoToStr(info)
+
+		strSlice = append(strSlice, infoStr)
+	}
+
+	log.Info("start converting image list")
+
+	return strings.Join(strSlice, "\n")
+}
+
+func (s ImgService) imgInfoToStr(infoItem *models.ImgInfo) string {
+	createDt := infoItem.CreateDt.Format("2006-01-02 15:04:05")
+	updateDt := infoItem.UpdateDt.Format("2006-01-02 15:04:05")
+
+	return fmt.Sprintf("%s | %s | %s", infoItem.FileName, createDt, updateDt)
 }

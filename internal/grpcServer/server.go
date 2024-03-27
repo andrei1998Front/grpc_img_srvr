@@ -42,7 +42,7 @@ type ImgService interface {
 	Download(
 		filename string,
 	) (*models.ImgInfo, error)
-	ListOfImages(ctx context.Context) ([]*models.ImgInfo, error)
+	ListOfImages(ctx context.Context) (string, error)
 }
 
 func Register(
@@ -165,21 +165,15 @@ func (s *serverApi) ListOfImages(ctx context.Context, req *gis.ListOfImagesReque
 	s.chLOF <- struct{}{}
 	defer func() { <-s.chLOF }()
 
+	var lofResponce gis.ListOfImagesResponce
+
 	lof, err := s.imgService.ListOfImages(ctx)
 
 	if err != nil {
 		return &gis.ListOfImagesResponce{}, status.Error(codes.Internal, "internal error")
 	}
 
-	var lofResponce gis.ListOfImagesResponce
-	for _, imgInfo := range lof {
-		lofResponce.ListOfImages = append(lofResponce.ListOfImages, &gis.ImgInfo{
-			FileName: imgInfo.FileName,
-			Size:     imgInfo.Size,
-			CreateDt: timestamppb.New(imgInfo.CreateDt),
-			UpdateDt: timestamppb.New(imgInfo.UpdateDt),
-		})
-	}
+	lofResponce.ListOfImages = lof
 
 	return &lofResponce, nil
 }

@@ -36,5 +36,5 @@ message ImgDownloadResponce {
 message ListOfImagesRequest{}
 
 message ListOfImagesResponce{
-    repeated ImgInfo ListOfImages = 1;
+    string ListOfImages = 1;
 }
