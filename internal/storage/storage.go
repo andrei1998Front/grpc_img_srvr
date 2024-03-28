@@ -15,7 +15,9 @@ import (
 var allowedExtensions []string = []string{".jpeg", ".jpg", ".png", ".svg"}
 
 var (
-	ErrImageNotFound = errors.New("image not found")
+	ErrImageNotFound    = errors.New("image not found")
+	ErrPathNotExists    = errors.New("directory not exists")
+	ErrPathNotDirectory = errors.New("path is not directory")
 )
 
 type DiskImageStorage struct {
@@ -52,7 +54,17 @@ func prepareListImages(path string) ([]*models.ImgInfo, error) {
 	const op = "storage.prepartListImages"
 	var listOfImages []*models.ImgInfo
 
-	err := filepath.WalkDir(path, func(pathImg string, d os.DirEntry, err error) error {
+	st, err := os.Stat(path)
+
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("%s: %w", op, ErrPathNotExists)
+	}
+
+	if !st.IsDir() {
+		return nil, fmt.Errorf("%s: %w", op, ErrPathNotDirectory)
+	}
+
+	err = filepath.WalkDir(path, func(pathImg string, d os.DirEntry, err error) error {
 		ch := checkExtension(allowedExtensions, filepath.Ext(d.Name()))
 		cd := d.IsDir()
 
