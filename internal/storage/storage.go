@@ -170,5 +170,7 @@ func (d *DiskImageStorage) Download(
 }
 
 func (d *DiskImageStorage) ListOfImages(ctx context.Context) ([]*models.ImgInfo, error) {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 	return d.ListImages, nil
 }
