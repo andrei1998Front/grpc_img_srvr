@@ -15,9 +15,10 @@ import (
 var allowedExtensions []string = []string{".jpeg", ".jpg", ".png", ".svg"}
 
 var (
-	ErrImageNotFound    = errors.New("image not found")
-	ErrPathNotExists    = errors.New("directory not exists")
-	ErrPathNotDirectory = errors.New("path is not directory")
+	ErrImageNotFound       = errors.New("image not found")
+	ErrPathNotExists       = errors.New("directory not exists")
+	ErrPathNotDirectory    = errors.New("path is not directory")
+	ErrInvalidImgExtension = errors.New("invalid image extension")
 )
 
 type DiskImageStorage struct {
@@ -97,6 +98,10 @@ func prepareListImages(path string) ([]*models.ImgInfo, error) {
 
 func (d *DiskImageStorage) Upload(filename string, data bytes.Buffer) (models.ImgInfo, error) {
 	const op string = "storage.Upload"
+
+	if ext := checkExtension(allowedExtensions, filepath.Ext(filename)); !ext {
+		return models.ImgInfo{}, fmt.Errorf("%s: %w", op, ErrInvalidImgExtension)
+	}
 
 	imagePath := fmt.Sprintf("%s/%s", d.Path, filename)
 
