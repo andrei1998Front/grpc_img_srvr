@@ -12,7 +12,7 @@ import (
 	"github.com/andrei1998Front/grpc_img_srvr/internal/domain/models"
 )
 
-var allowedExtensions []string = []string{".jpeg", ".jpg", ".png", ".svg"}
+var AllowedExtensions []string = []string{".jpeg", ".jpg", ".png", ".svg"}
 
 var (
 	ErrImageNotFound       = errors.New("image not found")
@@ -66,7 +66,7 @@ func prepareListImages(path string) ([]*models.ImgInfo, error) {
 	}
 
 	err = filepath.WalkDir(path, func(pathImg string, d os.DirEntry, err error) error {
-		ch := checkExtension(allowedExtensions, filepath.Ext(d.Name()))
+		ch := checkExtension(AllowedExtensions, filepath.Ext(d.Name()))
 		cd := d.IsDir()
 
 		if !cd && ch {
@@ -99,7 +99,7 @@ func prepareListImages(path string) ([]*models.ImgInfo, error) {
 func (d *DiskImageStorage) Upload(filename string, data bytes.Buffer) (models.ImgInfo, error) {
 	const op string = "storage.Upload"
 
-	if ext := checkExtension(allowedExtensions, filepath.Ext(filename)); !ext {
+	if ext := checkExtension(AllowedExtensions, filepath.Ext(filename)); !ext {
 		return models.ImgInfo{}, fmt.Errorf("%s: %w", op, ErrInvalidImgExtension)
 	}
 
