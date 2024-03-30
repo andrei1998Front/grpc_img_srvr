@@ -22,6 +22,7 @@ type ImgService struct {
 	listOfImagesGetter ListOfImagesGetter
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.42.1 --name=ImgUploader
 type ImgUploader interface {
 	Upload(
 		filename string,
@@ -30,12 +31,14 @@ type ImgUploader interface {
 	CheckExists(filename string) bool
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.42.1 --name=ImgDownloader
 type ImgDownloader interface {
 	Download(
 		filename string,
 	) (*models.ImgInfo, error)
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.42.1 --name=ListOfImagesGetter
 type ListOfImagesGetter interface {
 	ListOfImages(ctx context.Context) ([]*models.ImgInfo, error)
 }

@@ -1,11 +1,14 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/andrei1998Front/grpc_img_srvr/internal/domain/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,5 +92,56 @@ func Test_prepareListImages(t *testing.T) {
 		} else if tt.wantErr && err != nil {
 			require.ErrorContains(t, err, tt.err)
 		}
+	}
+}
+
+func TestDiskImageStorage_Upload(t *testing.T) {
+	mockStorage := DiskImageStorage{
+		Path: "./test_imgs_dir",
+		ListImages: []*models.ImgInfo{
+			{
+				FileName: "dddd.jpeg",
+				Path:     "./test_imgs_dir",
+				Size:     uint32(33),
+				CreateDt: time.Now(),
+				UpdateDt: time.Now(),
+			},
+		},
+	}
+
+	type args struct {
+		filename string
+		data     bytes.Buffer
+	}
+	tests := []struct {
+		name    string
+		d       *DiskImageStorage
+		args    args
+		want    models.ImgInfo
+		lenList int
+		wantErr bool
+		err     string
+	}{
+		{
+			name: "Success",
+			d:    &mockStorage,
+			args: args{
+				filename: "pupa.png",
+				data:     bytes.Buffer{},
+			},
+			want: models.ImgInfo{
+				FileName: "pupa.png",
+				Path:     mockStorage.Path,
+				Size:     uint32(0),
+			},
+			wantErr: false,
+			lenList: 2,
+		},
+	}
+	for _, tt := range tests {
+		got, err := tt.d.Upload(tt.args.filename, tt.args.data)
+
+		t.Log(err)
+		require.Equal(t, tt.want.FileName, got.FileName)
 	}
 }
