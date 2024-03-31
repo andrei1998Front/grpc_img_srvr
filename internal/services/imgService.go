@@ -78,7 +78,7 @@ func (s ImgService) Upload(
 	imgInfo, err := s.imgUploader.Upload(filename, chunk)
 
 	if err != nil {
-		log.Error("image "+filename+" upload failed", err)
+		log.Error("imagez "+filename+" upload failed", err)
 		return models.ImgInfo{}, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -127,30 +127,26 @@ func (s ImgService) ListOfImages(ctx context.Context) (string, error) {
 
 	log.Info("the list of images was received from the storage successfully")
 
-	return s.lofToStr(lof), nil
+	return lofToStr(lof), nil
 }
 
-func (s ImgService) lofToStr(infoList []*models.ImgInfo) string {
-	const op = "ImageService.lofToStr"
-
-	log := s.log.With(slog.String("op", op))
-
+func lofToStr(infoList []*models.ImgInfo) string {
 	var strSlice []string
 
-	log.Info("start converting image list")
-
 	for _, info := range infoList {
-		infoStr := s.imgInfoToStr(info)
+		infoStr := imgInfoToStr(info)
 
 		strSlice = append(strSlice, infoStr)
 	}
 
-	log.Info("start converting image list")
-
 	return strings.Join(strSlice, "\n")
 }
 
-func (s ImgService) imgInfoToStr(infoItem *models.ImgInfo) string {
+func imgInfoToStr(infoItem *models.ImgInfo) string {
+	if infoItem.FileName == "" {
+		return ""
+	}
+
 	createDt := infoItem.CreateDt.Format("2006-01-02 15:04:05")
 	updateDt := infoItem.UpdateDt.Format("2006-01-02 15:04:05")
 

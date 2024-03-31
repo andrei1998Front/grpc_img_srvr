@@ -90,6 +90,7 @@ func Test_prepareListImages(t *testing.T) {
 			}
 		} else if !tt.wantErr && err != nil {
 			t.Errorf("unexpected error: " + err.Error())
+			return
 		} else if tt.wantErr && err != nil {
 			require.ErrorContains(t, err, tt.err)
 		}
@@ -157,6 +158,7 @@ func TestDiskImageStorage_Upload(t *testing.T) {
 
 		if !tt.wantErr && err != nil {
 			t.Errorf("unexpected error: " + err.Error())
+			return
 		} else if tt.wantErr && err != nil {
 			require.ErrorContains(t, err, tt.err)
 		}
@@ -201,7 +203,7 @@ func TestDiskImageStorage_Download(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:     "Invalid extension",
+			name:     "Non-existing img",
 			d:        &mockStorage,
 			filename: "ffff.jpeg",
 			want:     &models.ImgInfo{},
@@ -214,6 +216,7 @@ func TestDiskImageStorage_Download(t *testing.T) {
 
 		if !tt.wantErr && err != nil {
 			t.Errorf("unexpected error: " + err.Error())
+			return
 		} else if tt.wantErr && err != nil {
 			require.ErrorContains(t, err, tt.err)
 		}
@@ -257,6 +260,7 @@ func TestDiskImageStorage_ListOfImages(t *testing.T) {
 
 		if !tt.wantErr && err != nil {
 			t.Errorf("unexpected error: " + err.Error())
+			return
 		} else if tt.wantErr && err != nil {
 			require.ErrorContains(t, err, tt.err)
 		}
