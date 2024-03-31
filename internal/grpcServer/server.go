@@ -34,6 +34,7 @@ func New(
 	}
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.42.1 --name=ImgService
 type ImgService interface {
 	Upload(
 		filename string,
@@ -58,7 +59,12 @@ func Register(
 func (s *serverApi) Upload(
 	stream gis.ImgService_UploadServer,
 ) error {
-	s.chDownloadUpload <- struct{}{}
+	select {
+	case s.chDownloadUpload <- struct{}{}:
+		fmt.Println("11111")
+	default:
+		return status.Error(codes.ResourceExhausted, "the request queue is full. try later")
+	}
 	defer func() { <-s.chDownloadUpload }()
 
 	var filename string
@@ -110,7 +116,12 @@ func (s *serverApi) Download(
 	req *gis.ImgDownloadRequest,
 	stream gis.ImgService_DownloadServer,
 ) error {
-	s.chDownloadUpload <- struct{}{}
+	select {
+	case s.chDownloadUpload <- struct{}{}:
+	default:
+		return status.Error(codes.ResourceExhausted, "the request queue is full. try later")
+	}
+
 	defer func() { <-s.chDownloadUpload }()
 
 	filename := req.GetFileName()
@@ -162,7 +173,11 @@ func (s *serverApi) Download(
 }
 
 func (s *serverApi) ListOfImages(ctx context.Context, req *gis.ListOfImagesRequest) (*gis.ListOfImagesResponce, error) {
-	s.chLOF <- struct{}{}
+	select {
+	case s.chLOF <- struct{}{}:
+	default:
+		return &gis.ListOfImagesResponce{}, status.Error(codes.ResourceExhausted, "the request queue is full. try later")
+	}
 	defer func() { <-s.chLOF }()
 
 	var lofResponce gis.ListOfImagesResponce
