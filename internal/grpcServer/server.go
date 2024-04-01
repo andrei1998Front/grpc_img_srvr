@@ -3,7 +3,6 @@ package grpcServer
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 
@@ -34,7 +33,6 @@ func New(
 	}
 }
 
-//go:generate go run github.com/vektra/mockery/v2@v2.42.1 --name=ImgService
 type ImgService interface {
 	Upload(
 		filename string,
@@ -61,7 +59,6 @@ func (s *serverApi) Upload(
 ) error {
 	select {
 	case s.chDownloadUpload <- struct{}{}:
-		fmt.Println("11111")
 	default:
 		return status.Error(codes.ResourceExhausted, "the request queue is full. try later")
 	}
@@ -137,7 +134,6 @@ func (s *serverApi) Download(
 	}
 
 	imgFile, err := os.Open(imgInfo.Path + "/" + imgInfo.FileName)
-	fmt.Println(imgInfo.Path + "/" + imgInfo.FileName)
 
 	if err != nil {
 		return status.Error(codes.Internal, "open file error")
